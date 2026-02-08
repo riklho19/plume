@@ -81,34 +81,19 @@ export const AuthorHighlight = Mark.create<AuthorHighlightOptions>({
     if (!authorColor) return [];
 
     const markType = this.type;
+    const authorMark = markType.create({ color: authorColor });
 
     return [
       new Plugin({
         key: new PluginKey('authorHighlightInput'),
-        appendTransaction(transactions, _oldState, newState) {
-          // Only run when there are actual changes with user steps
-          const hasUserInput = transactions.some(
-            (tr) => tr.docChanged && !tr.getMeta('remote') && !tr.getMeta('y-sync$')
-          );
-          if (!hasUserInput) return null;
-
-          const { tr } = newState;
-          let modified = false;
-
-          for (const transaction of transactions) {
-            for (const step of transaction.steps) {
-              const stepMap = step.getMap();
-              stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
-                if (newEnd > newStart) {
-                  const mark = markType.create({ color: authorColor });
-                  tr.addMark(newStart, newEnd, mark);
-                  modified = true;
-                }
-              });
-            }
-          }
-
-          return modified ? tr : null;
+        appendTransaction(_transactions, _oldState, newState) {
+          // Ensure author highlight mark is always active for new input
+          // This works like bold/italic: stored marks determine what marks
+          // the next typed character will have
+          const stored = newState.storedMarks || newState.selection.$from.marks();
+          const has = stored.some((m) => m.type === markType);
+          if (has) return null;
+          return newState.tr.setStoredMarks([...stored, authorMark]);
         },
       }),
     ];
