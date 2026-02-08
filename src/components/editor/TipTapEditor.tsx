@@ -13,6 +13,8 @@ import { useAutoSave } from '../../hooks/useAutoSave';
 import { UI } from '../../lib/constants';
 import { EditorToolbar } from './EditorToolbar';
 import { AuthorHighlight } from '../../extensions/AuthorHighlight';
+import * as versionsApi from '../../lib/api/versions';
+import { countWords } from '../../lib/wordCount';
 import '../../styles/editor.css';
 import '../../styles/collaboration.css';
 
@@ -30,12 +32,16 @@ const COLLAB_COLORS = [
   '#7c2d12', '#0891b2', '#4f46e5', '#be185d', '#65a30d',
 ];
 
-function getUserColor(userId: string): string {
+function userIdHash(userId: string): number {
   let hash = 0;
   for (let i = 0; i < userId.length; i++) {
     hash = userId.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return COLLAB_COLORS[Math.abs(hash) % COLLAB_COLORS.length];
+  return Math.abs(hash);
+}
+
+function getUserColor(userId: string): string {
+  return COLLAB_COLORS[userIdHash(userId) % COLLAB_COLORS.length];
 }
 
 export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProps) {
@@ -62,7 +68,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
   // Owner (project in own projects) → null (no highlight, default black)
   // Collaborator → assign from AUTHOR_COLORS based on user ID hash
   const authorColor = isShared
-    ? AUTHOR_COLORS[Math.abs(getUserColor(user?.id || '').charCodeAt(0)) % AUTHOR_COLORS.length]
+    ? AUTHOR_COLORS[userIdHash(user?.id || '') % AUTHOR_COLORS.length]
     : null;
 
   const collabRef = useRef<ReturnType<typeof getCollaboration> | null>(null);
@@ -130,7 +136,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
         class: 'px-4 sm:px-8 py-4 max-w-editor mx-auto w-full focus:outline-none',
       },
     },
-  }, [sceneId]); // Re-create editor when scene changes
+  }, [sceneId, authorColor]); // Re-create editor when scene or author role changes
 
   // Initialize content from DB into Yjs doc if first user
   useEffect(() => {
@@ -146,6 +152,17 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
   useEffect(() => {
     initializedRef.current = false;
   }, [sceneId]);
+
+  // Create initial version snapshot when scene is first loaded with content
+  useEffect(() => {
+    if (!scene?.content || !scene.content.trim() || scene.content === '<p></p>') return;
+    versionsApi.fetchVersions(sceneId).then((versions) => {
+      if (versions.length === 0) {
+        const wc = countWords(scene.content);
+        versionsApi.createVersion(sceneId, projectId, scene.content, wc, UI.versionInitial).catch(() => {});
+      }
+    }).catch(() => {});
+  }, [sceneId, projectId]);
 
   // Ctrl+S to force save
   useEffect(() => {

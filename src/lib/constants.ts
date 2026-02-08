@@ -156,6 +156,7 @@ export const UI = {
   noVersionsHint: 'Les versions sont créées automatiquement pendant l\'écriture.',
   versionAutoSave: 'Auto-sauvegarde',
   versionManual: 'Sauvegarde manuelle',
+  versionInitial: 'Version initiale',
 
   // Fonts
   font: 'Police',
