@@ -103,7 +103,6 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        history: false,
       }),
       UnderlineExt,
       Placeholder.configure({
@@ -138,7 +137,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     if (!editor || !scene?.content || initializedRef.current) return;
     const docContent = editor.getHTML();
     if (docContent === '<p></p>' || docContent === '') {
-      editor.commands.setContent(scene.content, false);
+      editor.commands.setContent(scene.content, { emitUpdate: false });
     }
     initializedRef.current = true;
   }, [editor, scene?.content]);

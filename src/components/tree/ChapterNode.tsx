@@ -48,12 +48,12 @@ export function ChapterNode({ chapter, projectId }: ChapterNodeProps) {
     updateChapter(projectId, chapter.id, { isCollapsed: !chapter.isCollapsed });
   };
 
-  const handleAddScene = (e: React.MouseEvent) => {
+  const handleAddScene = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (chapter.isCollapsed) {
       updateChapter(projectId, chapter.id, { isCollapsed: false });
     }
-    const sceneId = addScene(projectId, chapter.id);
+    const sceneId = await addScene(projectId, chapter.id);
     selectScene(projectId, chapter.id, sceneId);
   };
 

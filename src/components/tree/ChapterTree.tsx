@@ -111,11 +111,12 @@ export function ChapterTree({ project }: ChapterTreeProps) {
     }
   };
 
-  const handleAddChapter = () => {
-    const chapterId = addChapter(project.id);
-    const sceneId = useProjectStore.getState().projects
-      .find((p) => p.id === project.id)
-      ?.chapters.find((ch) => ch.id === chapterId)
+  const handleAddChapter = async () => {
+    const chapterId = await addChapter(project.id);
+    const state = useProjectStore.getState();
+    const proj = state.projects.find((p) => p.id === project.id)
+      || state.sharedProjects.find((p) => p.id === project.id);
+    const sceneId = proj?.chapters.find((ch) => ch.id === chapterId)
       ?.scenes[0]?.id;
     if (sceneId) {
       selectScene(project.id, chapterId, sceneId);
