@@ -34,6 +34,7 @@ export type Genre =
 
 export interface Project {
   id: string;
+  ownerId: string;
   title: string;
   summary: string;
   genre: Genre;

@@ -48,9 +48,6 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
   const project = useProjectStore((s) =>
     s.projects.find((p) => p.id === projectId) || s.sharedProjects.find((p) => p.id === projectId)
   );
-  const isShared = useProjectStore((s) =>
-    s.sharedProjects.some((p) => p.id === projectId)
-  );
   const chapter = project?.chapters.find((ch) => ch.id === chapterId);
   const scene = chapter?.scenes.find((sc) => sc.id === sceneId);
 
@@ -64,10 +61,9 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
   const userName = profile?.display_name || 'Anonyme';
   const userColor = getUserColor(user?.id || 'default');
 
-  // Determine author highlight color for this user
-  // Owner (project in own projects) → null (no highlight, default black)
-  // Collaborator → assign from AUTHOR_COLORS based on user ID hash
-  const authorColor = isShared
+  // Owner writes in black (no highlight), collaborators get a distinct color
+  const isOwner = project?.ownerId === user?.id;
+  const authorColor = !isOwner
     ? AUTHOR_COLORS[userIdHash(user?.id || '') % AUTHOR_COLORS.length]
     : null;
 

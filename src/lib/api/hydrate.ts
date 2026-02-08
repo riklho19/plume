@@ -6,6 +6,7 @@ import type { Project, Chapter, Scene } from '../../types/models';
 export function dbProjectToProject(dbProject: DbProject, chapters: Chapter[]): Project {
   return {
     id: dbProject.id,
+    ownerId: dbProject.owner_id,
     title: dbProject.title,
     summary: dbProject.summary,
     genre: dbProject.genre as Project['genre'],

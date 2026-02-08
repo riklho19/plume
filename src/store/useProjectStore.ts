@@ -112,7 +112,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => ({
       const db = await projectsApi.createProject(title, summary, genre);
       const now = new Date().toISOString();
       const project: Project = {
-        id: db.id, title, summary, genre,
+        id: db.id, ownerId: db.owner_id, title, summary, genre,
         isPublic: db.is_public,
         shareToken: db.share_token,
         chapters: [],
