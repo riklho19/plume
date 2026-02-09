@@ -151,22 +151,22 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Online users indicator */}
-      {users.length > 0 && (
-        <div className="flex items-center gap-1 mr-2">
-          {users.slice(0, 3).map((u) => (
-            <div
-              key={u.clientId}
-              className="w-2 h-2 rounded-full"
-              style={{ backgroundColor: u.color }}
-              title={u.name}
-            />
-          ))}
-          {users.length > 3 && (
-            <span className="text-xs text-gray-400">+{users.length - 3}</span>
-          )}
-        </div>
-      )}
+      {/* Connection + online users indicator */}
+      <div className="flex items-center gap-1 mr-2">
+        <div
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: connected ? '#22c55e' : '#ef4444' }}
+          title={connected ? 'Connecté' : 'Déconnecté'}
+        />
+        {users.map((u) => (
+          <div
+            key={u.clientId}
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: u.color }}
+            title={u.name}
+          />
+        ))}
+      </div>
 
       {/* Right-side actions */}
       <div className="flex items-center gap-0.5">
