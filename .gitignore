@@ -34,3 +34,5 @@ supabase.tar.gz
 # Temp files
 tmp/
 supabase/.temp/
+
+.vercel
