@@ -103,7 +103,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        undoRedo: collabReady ? false : undefined,
+        ...(collabReady ? { undoRedo: false as const } : {}),
       }),
       UnderlineExt,
       Placeholder.configure({
