@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExt from '@tiptap/extension-underline';
@@ -69,14 +69,14 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
 
   const initializedRef = useRef(false);
 
-  // Initialize collaboration synchronously so it's available for useEditor
-  const collab = useMemo(
-    () => getCollaboration(sceneId, userName, userColor),
-    [sceneId, userName, userColor]
-  );
+  // Track collaboration readiness via state so editor recreates when collab is ready
+  const [collabState, setCollabState] = useState<ReturnType<typeof getCollaboration> | null>(null);
 
-  // Handle collaboration events + cleanup
+  // Set up collaboration
   useEffect(() => {
+    const collab = getCollaboration(sceneId, userName, userColor);
+    setCollabState(collab);
+
     const handleStatus = ({ status }: { status: string }) => {
       setConnected(status === 'connected');
     };
@@ -100,8 +100,9 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
       destroyCollaboration(sceneId);
       setConnected(false);
       setUsers([]);
+      setCollabState(null);
     };
-  }, [collab, sceneId, setConnected, setUsers]);
+  }, [sceneId, userName, userColor, setConnected, setUsers]);
 
   const editor = useEditor({
     extensions: [
@@ -115,14 +116,18 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
       AuthorHighlight.configure({
         authorColor,
       }),
-      Collaboration.configure({
-        document: collab.doc,
-      }),
-      CollaborationCursor.configure({
-        provider: collab.provider,
-        user: { name: userName, color: userColor },
-      }),
+      ...(collabState ? [
+        Collaboration.configure({
+          document: collabState.doc,
+        }),
+        CollaborationCursor.configure({
+          provider: collabState.provider,
+          user: { name: userName, color: userColor },
+        }),
+      ] : []),
     ],
+    // Only set content when not using Yjs (Yjs manages doc state)
+    content: collabState ? undefined : (scene?.content || ''),
     onUpdate: ({ editor }) => {
       save(editor.getHTML());
     },
@@ -131,7 +136,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
         class: 'px-4 sm:px-8 py-4 max-w-editor mx-auto w-full focus:outline-none',
       },
     },
-  }, [sceneId, authorColor]); // Re-create editor when scene or author role changes
+  }, [sceneId, authorColor, collabState]); // Recreate when collab becomes ready
 
   // Manage author highlight marks
   useEffect(() => {
@@ -162,8 +167,8 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
 
   // Seed Yjs doc with DB content if the doc is empty (first user to open)
   useEffect(() => {
-    if (!editor || !scene?.content || initializedRef.current) return;
-    // Wait a tick for Yjs to sync any existing remote state
+    if (!editor || !collabState || !scene?.content || initializedRef.current) return;
+    // Wait for Yjs to sync any existing remote state
     const timer = setTimeout(() => {
       const docContent = editor.getHTML();
       if (docContent === '<p></p>' || docContent === '') {
@@ -172,7 +177,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
       initializedRef.current = true;
     }, 500);
     return () => clearTimeout(timer);
-  }, [editor, scene?.content]);
+  }, [editor, collabState, scene?.content]);
 
   // Reset initialized flag on scene change
   useEffect(() => {
