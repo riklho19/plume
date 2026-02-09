@@ -134,6 +134,26 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     },
   }, [sceneId, authorColor]); // Re-create editor when scene or author role changes
 
+  // Keep author highlight mark active for collaborators
+  useEffect(() => {
+    if (!editor || !authorColor) return;
+
+    const ensureMark = () => {
+      if (!editor.isActive('authorHighlight')) {
+        editor.commands.setMark('authorHighlight', { color: authorColor });
+      }
+    };
+
+    // Set immediately on editor creation
+    ensureMark();
+
+    // Re-apply when cursor moves to unformatted text
+    editor.on('selectionUpdate', ensureMark);
+    return () => {
+      editor.off('selectionUpdate', ensureMark);
+    };
+  }, [editor, authorColor]);
+
   // Initialize content from DB into Yjs doc if first user
   useEffect(() => {
     if (!editor || !scene?.content || initializedRef.current) return;

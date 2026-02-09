@@ -1,5 +1,4 @@
 import { Mark, mergeAttributes } from '@tiptap/core';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 export interface AuthorHighlightOptions {
   authorColor: string | null;
@@ -76,26 +75,4 @@ export const AuthorHighlight = Mark.create<AuthorHighlightOptions>({
     };
   },
 
-  addProseMirrorPlugins() {
-    const authorColor = this.options.authorColor;
-    if (!authorColor) return [];
-
-    const markType = this.type;
-    const authorMark = markType.create({ color: authorColor });
-
-    return [
-      new Plugin({
-        key: new PluginKey('authorHighlightInput'),
-        appendTransaction(_transactions, _oldState, newState) {
-          // Ensure author highlight mark is always active for new input
-          // This works like bold/italic: stored marks determine what marks
-          // the next typed character will have
-          const stored = newState.storedMarks || newState.selection.$from.marks();
-          const has = stored.some((m) => m.type === markType);
-          if (has) return null;
-          return newState.tr.setStoredMarks([...stored, authorMark]);
-        },
-      }),
-    ];
-  },
 });
