@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExt from '@tiptap/extension-underline';
@@ -65,13 +65,14 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     : null;
 
   const initializedRef = useRef(false);
-  const [collabReady, setCollabReady] = useState<ReturnType<typeof getCollaboration> | null>(null);
 
-  // Set up collaboration
+  // Create collaboration synchronously (cached per sceneId)
+  const collab = useMemo(() => {
+    return getCollaboration(sceneId, userName, userColor);
+  }, [sceneId, userName, userColor]);
+
+  // Manage provider events
   useEffect(() => {
-    const collab = getCollaboration(sceneId, userName, userColor);
-    setCollabReady(collab);
-
     const handleStatus = ({ status }: { status: string }) => {
       setConnected(status === 'connected');
     };
@@ -95,15 +96,14 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
       destroyCollaboration(sceneId);
       setConnected(false);
       setUsers([]);
-      setCollabReady(null);
     };
-  }, [sceneId, userName, userColor, setConnected, setUsers]);
+  }, [collab, sceneId, setConnected, setUsers]);
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        ...(collabReady ? { undoRedo: false } : {}),
+        undoRedo: false,
       }),
       UnderlineExt,
       Placeholder.configure({
@@ -112,15 +112,12 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
       AuthorHighlight.configure({
         authorColor,
       }),
-      ...(collabReady ? [
-        YjsCollaboration.configure({
-          document: collabReady.doc,
-          provider: collabReady.provider,
-          user: { name: userName, color: userColor },
-        }),
-      ] : []),
+      YjsCollaboration.configure({
+        document: collab.doc,
+        provider: collab.provider,
+        user: { name: userName, color: userColor },
+      }),
     ],
-    content: collabReady ? undefined : (scene?.content || ''),
     onUpdate: ({ editor }) => {
       save(editor.getHTML());
     },
@@ -129,7 +126,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
         class: 'px-4 sm:px-8 py-4 max-w-editor mx-auto w-full focus:outline-none',
       },
     },
-  }, [sceneId, authorColor, collabReady]);
+  }, [sceneId, authorColor]);
 
   // Manage author highlight marks
   useEffect(() => {
@@ -158,7 +155,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
 
   // Seed Yjs doc with DB content if empty (first user to open)
   useEffect(() => {
-    if (!editor || !collabReady || !scene?.content || initializedRef.current) return;
+    if (!editor || !scene?.content || initializedRef.current) return;
     const timer = setTimeout(() => {
       const docContent = editor.getHTML();
       if (docContent === '<p></p>' || docContent === '') {
@@ -167,7 +164,7 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
       initializedRef.current = true;
     }, 500);
     return () => clearTimeout(timer);
-  }, [editor, collabReady, scene?.content]);
+  }, [editor, scene?.content]);
 
   useEffect(() => {
     initializedRef.current = false;
