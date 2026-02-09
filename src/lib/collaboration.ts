@@ -1,16 +1,16 @@
 import * as Y from 'yjs';
-import { WebsocketProvider } from 'y-partykit/provider';
+import YPartyKitProvider from 'y-partykit/provider';
 
 const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST || 'localhost:1999';
 
-const docs = new Map<string, { doc: Y.Doc; provider: WebsocketProvider }>();
+const docs = new Map<string, { doc: Y.Doc; provider: YPartyKitProvider }>();
 
 export function getCollaboration(sceneId: string, userName: string, userColor: string) {
   const existing = docs.get(sceneId);
   if (existing) return existing;
 
   const doc = new Y.Doc();
-  const provider = new WebsocketProvider(PARTYKIT_HOST, `scene-${sceneId}`, doc, {
+  const provider = new YPartyKitProvider(PARTYKIT_HOST, `scene-${sceneId}`, doc, {
     connect: true,
   });
 

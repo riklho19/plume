@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExt from '@tiptap/extension-underline';
@@ -76,23 +76,14 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     const p = collab.provider;
 
     const handleStatus = ({ status }: { status: string }) => {
-      console.log('[collab] status:', status, 'url:', p.url);
       setConnected(status === 'connected');
     };
     p.on('status', handleStatus);
 
     // Check if already connected (event may have fired before handler attached)
     if ((p as unknown as { wsconnected: boolean }).wsconnected) {
-      console.log('[collab] already connected');
       setConnected(true);
     }
-
-    p.on('connection-error', (e: Event) => {
-      console.error('[collab] connection-error:', e);
-    });
-    p.on('connection-close', (e: Event) => {
-      console.log('[collab] connection-close:', e);
-    });
 
     const handleAwareness = () => {
       const states = p.awareness.getStates();
@@ -213,15 +204,9 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     return () => { flush(); };
   }, [flush]);
 
-  const connected = useCollaborationStore((s) => s.connected);
-  const wsUrl = collab.provider.url;
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <EditorToolbar editor={editor} />
-      <div className="text-xs px-4 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500">
-        WS: {connected ? 'VERT' : 'ROUGE'} | URL: {wsUrl}
-      </div>
       <div className="flex-1 overflow-y-auto">
         <EditorContent editor={editor} />
       </div>

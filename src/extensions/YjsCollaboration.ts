@@ -2,11 +2,11 @@ import { Extension } from '@tiptap/core';
 import { ySyncPlugin, yCursorPlugin, yUndoPlugin, undoCommand, redoCommand } from 'y-prosemirror';
 import { keymap } from '@tiptap/pm/keymap';
 import type * as Y from 'yjs';
-import type { WebsocketProvider } from 'y-partykit/provider';
+import type YPartyKitProvider from 'y-partykit/provider';
 
 export interface YjsCollaborationOptions {
   document: Y.Doc;
-  provider: WebsocketProvider;
+  provider: YPartyKitProvider;
   user: { name: string; color: string };
 }
 
