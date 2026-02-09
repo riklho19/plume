@@ -134,24 +134,31 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     },
   }, [sceneId, authorColor]); // Re-create editor when scene or author role changes
 
-  // Keep author highlight mark active for collaborators
+  // Manage author highlight marks
   useEffect(() => {
-    if (!editor || !authorColor) return;
+    if (!editor) return;
 
-    const ensureMark = () => {
-      if (!editor.isActive('authorHighlight')) {
-        editor.commands.setMark('authorHighlight', { color: authorColor });
-      }
-    };
-
-    // Set immediately on editor creation
-    ensureMark();
-
-    // Re-apply when cursor moves to unformatted text
-    editor.on('selectionUpdate', ensureMark);
-    return () => {
-      editor.off('selectionUpdate', ensureMark);
-    };
+    if (authorColor) {
+      // Collaborator: ensure color mark is always active
+      const ensureMark = () => {
+        if (!editor.isActive('authorHighlight')) {
+          editor.commands.setMark('authorHighlight', { color: authorColor });
+        }
+      };
+      ensureMark();
+      editor.on('selectionUpdate', ensureMark);
+      return () => { editor.off('selectionUpdate', ensureMark); };
+    } else {
+      // Owner: ensure color mark is NEVER active (strip collaborator marks from cursor)
+      const removeMark = () => {
+        if (editor.isActive('authorHighlight')) {
+          editor.commands.unsetMark('authorHighlight');
+        }
+      };
+      removeMark();
+      editor.on('selectionUpdate', removeMark);
+      return () => { editor.off('selectionUpdate', removeMark); };
+    }
   }, [editor, authorColor]);
 
   // Initialize content from DB into Yjs doc if first user
