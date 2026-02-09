@@ -73,13 +73,29 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
 
   // Manage provider events
   useEffect(() => {
+    const p = collab.provider;
+
     const handleStatus = ({ status }: { status: string }) => {
+      console.log('[collab] status:', status, 'url:', p.url);
       setConnected(status === 'connected');
     };
-    collab.provider.on('status', handleStatus);
+    p.on('status', handleStatus);
+
+    // Check if already connected (event may have fired before handler attached)
+    if ((p as unknown as { wsconnected: boolean }).wsconnected) {
+      console.log('[collab] already connected');
+      setConnected(true);
+    }
+
+    p.on('connection-error', (e: Event) => {
+      console.error('[collab] connection-error:', e);
+    });
+    p.on('connection-close', (e: Event) => {
+      console.log('[collab] connection-close:', e);
+    });
 
     const handleAwareness = () => {
-      const states = collab.provider.awareness.getStates();
+      const states = p.awareness.getStates();
       const users: { name: string; color: string; clientId: number }[] = [];
       states.forEach((state, clientId) => {
         if (state.user && clientId !== collab.doc.clientID) {
@@ -88,11 +104,11 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
       });
       setUsers(users);
     };
-    collab.provider.awareness.on('change', handleAwareness);
+    p.awareness.on('change', handleAwareness);
 
     return () => {
-      collab.provider.off('status', handleStatus);
-      collab.provider.awareness.off('change', handleAwareness);
+      p.off('status', handleStatus);
+      p.awareness.off('change', handleAwareness);
       destroyCollaboration(sceneId);
       setConnected(false);
       setUsers([]);
@@ -197,9 +213,15 @@ export function TipTapEditor({ projectId, chapterId, sceneId }: TipTapEditorProp
     return () => { flush(); };
   }, [flush]);
 
+  const connected = useCollaborationStore((s) => s.connected);
+  const wsUrl = collab.provider.url;
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <EditorToolbar editor={editor} />
+      <div className="text-xs px-4 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500">
+        WS: {connected ? 'VERT' : 'ROUGE'} | URL: {wsUrl}
+      </div>
       <div className="flex-1 overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
